@@ -7,9 +7,18 @@ import scala.collection.immutable._
 
 object PreprocHCRTweets {
 
+  val HCR_POS = "positive"
+  val HCR_NEG = "negative"
+  val HCR_NEU = "neutral"
+
+  // TODO: refactor this into a seperate enum
+  val NUM_POS = "1"
+  val NUM_NEU = "0"
+  val NUM_NEG = "-1"
+
   def main(args: Array[String]) {
     val reader = new CSVReader(new InputStreamReader(new FileInputStream(new File(args(0))), "UTF-8"))
-    val stoplist = scala.io.Source.fromFile(args(1), "utf-8").getLines.toSet 
+    val stoplist = scala.io.Source.fromFile(args(1), "utf-8").getLines.toSet
     val targetWriter = if(args.length >= 3) new OutputStreamWriter(new FileOutputStream(new File(args(2))),"UTF-8") else null
     val featureWriter = if(args.length >= 4 ) new OutputStreamWriter(new FileOutputStream(new File(args(3))),"UTF-8") else null
 
@@ -28,8 +37,6 @@ object PreprocHCRTweets {
     var numPassing = 0 //should be same as numTweets. used for debugging.
     while(fields != null) {
       someCount += 1
-      //println("entering while loop for the:" + someCount + "-th time...")
-      //println("length of fields ararry is: " + fields.length)
       if(fields.length >= 4) {
 	aboveTry += 1
         try {
@@ -57,18 +64,10 @@ object PreprocHCRTweets {
 	 
 	  
 	  
-	  //val (sentiment1, target1) = (fields(4).trim, fields(5).trim)
-	  //val (sentiment2, target2) = (fields(6).trim, fields(7).trim)  /*flipping emacs can't indent this correctly!!*/
-	  //val (sentiment3, target3) = (fields(8).trim, fields(9).trim) 
-	  
-	  /* A useful check to make sure empty fields are still of type java.lang.String (as are non-empty fields)*/
-	  //	  println("sentiment2: " + sentiment2 + "and the type of that is... "  + sentiment2.getClass.toString)
-	  //	  println("sentiment2 == emptystring " + (sentiment2 == "").toString)
 	  numTweets += 1
-	  //println(tweetid + " "+ username + " " + tweet  + " " + sentiment1)
-            if((sentiment1.contains("positive") 
-		|| sentiment1.contains("negative") 
-		|| sentiment1.contains("neutral")) 
+            if((sentiment1.contains(HCR_POS) 
+		|| sentiment1.contains(HCR_NEG) 
+		|| sentiment1.contains(HCR_NEU)) 
 	       && tweetid.length > 0 && username.length > 0 && tweet.length > 0) {  
               numPassing += 1 
 	      //println("numPassing: " + numPassing + " and numTweets is " + numTweets + " and someCount is " + someCount)
@@ -77,34 +76,34 @@ object PreprocHCRTweets {
               
 	      var label1 = ""; //var label2 = ""; var label3 = ""
 	      var numLabels = 1
-	      if (sentiment1 == "positive")  label1 = "1"
-	      else if (sentiment1 == "negative")  label1 = "-1"
-	      else if (sentiment1 == "neutral")  label1 = "0"
+	      if (sentiment1 == HCR_POS)  label1 = NUM_POS
+	      else if (sentiment1 == HCR_NEG)  label1 = NUM_NEG
+	      else if (sentiment1 == HCR_NEU)  label1 = NUM_NEU
 
 	      
-              if(label1 == "1") numPos += 1
-	      else if(label1 == "-1") numNeg += 1
-	      else if(label1 == "0") numNeu += 1
+              if(label1 == NUM_POS) numPos += 1
+	      else if(label1 == NUM_NEG) numNeg += 1
+	      else if(label1 == NUM_NEU) numNeu += 1
 	      /* A lot of multiple target stuff below has been commented out and will be uncommented when this functionality is ready... */
 	      
-	      /* *** if((sentiment2 == "positive" || sentiment2 == "negative" || sentiment2 == "neutral" ) && target2.length > 0) { 
-	       if (sentiment2 == "positive")  label2 = "1"
-	       else if (sentiment2 == "negative")  label2 = "-1"
-	       else if (sentiment2 == "neutral")  label2 = "0"
+	      /* *** if((sentiment2 == HCR_POS || sentiment2 == HCR_NEG || sentiment2 == HCR_NEU ) && target2.length > 0) { 
+	       if (sentiment2 == HCR_POS)  label2 = NUM_POS
+	       else if (sentiment2 == HCR_NEG)  label2 = NUM_NEG
+	       else if (sentiment2 == HCR_NEU)  label2 = NUM_NEU
 	       
-               if(label2 == "1") numPos += 1
-	       else if(label2 == "-1") numNeg +=1
+               if(label2 == NUM_POS) numPos += 1
+	       else if(label2 == NUM_NEG) numNeg +=1
 	       numLabels += 1
 	       
 	       }
 	       
-	       if((sentiment3 == "positive" || sentiment3 == "negative" || sentiment3 == "neutral" ) && target3.length > 0) { 
-	       if (sentiment3 == "positive")  label3 = "1"
-	       else if (sentiment3 == "negative")  label3 = "-1"
-	       else if (sentiment3 == "neutral")  label3 = "0"
+	       if((sentiment3 == HCR_POS || sentiment3 == HCR_NEG || sentiment3 == HCR_NEU ) && target3.length > 0) { 
+	       if (sentiment3 == HCR_POS)  label3 = NUM_POS
+	       else if (sentiment3 == HCR_NEG)  label3 = NUM_NEG
+	       else if (sentiment3 == HCR_NEU)  label3 = NUM_NEU
 	       
-               if(label3 == "1") numPos += 1
-		 else if(label3 == "-1") numNeg +=1
+               if(label3 == NUM_POS) numPos += 1
+		 else if(label3 == NUM_NEG) numNeg +=1
 		 numLabels += 1
 		 
 		 }
@@ -154,7 +153,10 @@ object PreprocHCRTweets {
 		  //System.err.println(numNotCounted + " " + tweetid + " " + username + " " + tweet + " " + sentiment1 + " " )
 		}
 	}
-        catch { case e: Exception => }
+        catch {
+          case e: Exception => System.err.println("Error processing tweet at line #" + (numTweets + 1)
+            +": "+java.util.Arrays.toString(fields.asInstanceOf[Array[java.lang.Object]]))
+        }
       }
 
       fields = reader.readNext
